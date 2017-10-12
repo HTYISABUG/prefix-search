@@ -61,23 +61,23 @@ static void *tst_del_word(tst_node **root,
 
     if (!victim->refcnt) {            /* if last occurrence */
         if (!victim->key && freeword) /* check key is nul   */
-            free(victim->eqkid);      /* free string (data) */
+            /*free(victim->eqkid);      [> free string (data) <]*/
 
-        /* remove unique suffix chain - parent & victim nodes
-         * have no children. simple remove until the first parent
-         * found with children.
-         */
-        while (!parent->lokid && !parent->hikid && !victim->lokid &&
-                !victim->hikid) {
-            parent->eqkid = NULL;
-            free(victim);
-            victim = parent;
-            parent = tst_stack_pop(stk);
-            if (!parent) { /* last word & root node */
+            /* remove unique suffix chain - parent & victim nodes
+             * have no children. simple remove until the first parent
+             * found with children.
+             */
+            while (!parent->lokid && !parent->hikid && !victim->lokid &&
+                    !victim->hikid) {
+                parent->eqkid = NULL;
                 free(victim);
-                return (void *) (*root = NULL);
+                victim = parent;
+                parent = tst_stack_pop(stk);
+                if (!parent) { /* last word & root node */
+                    free(victim);
+                    return (void *) (*root = NULL);
+                }
             }
-        }
 
         /* check if victim is prefix for others (victim has lo/hi node).
          * if both lo & hi children, check if lokid->hikid present, if not,

@@ -32,6 +32,7 @@ for FILE in $FILES; do
     rm "${nf}"
     if [ $r != 0 ] ; then
         echo "[!] $FILE does not follow the consistent coding style." >&2
+        astyle --style=kr --indent=spaces=4 --suffix=none $FILE
         RETURN=1
     fi
 done

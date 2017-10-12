@@ -33,6 +33,7 @@ static void rmcrlf(char *s)
 }
 
 #define IN_FILE "cities.txt"
+#define MEMPOOL_SIZE 10000000
 
 int main(int argc, char **argv)
 {
@@ -43,20 +44,27 @@ int main(int argc, char **argv)
     FILE *fp = fopen(IN_FILE, "r");
     double t1, t2;
 
+    // memory for string
+    char *pool = (char *) malloc(MEMPOOL_SIZE * sizeof(char));
+
+    // pointer to pool's top
+    char *pptr = pool;
+
     if (!fp) { /* prompt, open, validate file for reading */
         fprintf(stderr, "error: file open failed '%s'.\n", argv[1]);
         return 1;
     }
 
     t1 = tvgetf();
-    while ((rtn = fscanf(fp, "%s", word)) != EOF) {
-        char *p = word;
+    while ((rtn = fscanf(fp, "%s", pptr)) != EOF) {
+        char *p = pptr;
         /* FIXME: insert reference to each string */
         if (!tst_ins_del(&root, &p, INS, REF)) {
             fprintf(stderr, "error: memory exhausted, tst_insert.\n");
             fclose(fp);
             return 1;
         }
+        pptr += (strlen(pptr) + 1);
         idx++;
     }
     t2 = tvgetf();
@@ -79,17 +87,18 @@ int main(int argc, char **argv)
             char *p = NULL;
         case 'a':
             printf("enter word to add: ");
-            if (!fgets(word, sizeof word, stdin)) {
+            if (!fgets(pptr, sizeof word, stdin)) {
                 fprintf(stderr, "error: insufficient input.\n");
                 break;
             }
-            rmcrlf(word);
-            p = word;
+            rmcrlf(pptr);
+            p = pptr;
             t1 = tvgetf();
             /* FIXME: insert reference to each string */
             res = tst_ins_del(&root, &p, INS, REF);
             t2 = tvgetf();
             if (res) {
+                pptr += (strlen(pptr) + 1);
                 idx++;
                 printf("  %s - inserted in %.6f sec. (%d words in tree)\n",
                        (char *) res, t2 - t1, idx);
@@ -151,6 +160,7 @@ int main(int argc, char **argv)
         case 'q':
             /*tst_free_all(root);*/
             tst_free(root);
+            free(pool);
             return 0;
             break;
         default:
