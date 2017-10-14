@@ -2,7 +2,20 @@ TESTS = \
     test_cpy \
     test_ref
 
+CPP = g++
 CFLAGS = -Wall -Werror -g
+CPPFLAGS = -Wall -Werror -g -std=c++0x
+
+GENFILE= append.txt \
+		 data.txt \
+		 ldata.txt \
+		 len.txt \
+		 high.txt \
+		 prefix_search.txt \
+		 prefix_search_avg.txt
+
+EXEC = append \
+	   prefix_search
 
 # Control the build verbosity                                                   
 ifeq ("$(VERBOSE)","1")
@@ -41,12 +54,23 @@ test_%: test_%.o $(OBJS_LIB)
 	$(VECHO) "  CC\t$@\n"
 	$(Q)$(CC) -o $@ $(CFLAGS) -c -MMD -MF .$@.d $<
 
-bench:
-	sudo chrt -f 99 taskset -c 1 ./test_ref
+append: append.cpp
+	$(CPP) $(CPPFLAGS) $@.cpp -o $@
+
+prefix_search: prefix_search.cpp
+	$(CPP) $(CPPFLAGS) $@.cpp -o $@
+
+bench: $(TESTS) $(EXEC)
+	sudo chrt -f 99 taskset -c 1 ./test_ref --bench
+	./append
+	./prefix_search
+
+plot: bench
+	gnuplot scripts/*.gp
 
 clean:
-	$(RM) $(TESTS) $(OBJS)
+	$(RM) $(TESTS) $(OBJS) $(EXEC)
 	$(RM) $(deps)
-	$(RM) *.png
+	$(RM) *.png $(GENFILE)
 
 -include $(deps)

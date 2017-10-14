@@ -63,21 +63,21 @@ static void *tst_del_word(tst_node **root,
         if (!victim->key && freeword) /* check key is nul   */
             free(victim->eqkid);      /* free string (data) */
 
-            /* remove unique suffix chain - parent & victim nodes
-             * have no children. simple remove until the first parent
-             * found with children.
-             */
-            while (!parent->lokid && !parent->hikid && !victim->lokid &&
-                    !victim->hikid) {
-                parent->eqkid = NULL;
+        /* remove unique suffix chain - parent & victim nodes
+         * have no children. simple remove until the first parent
+         * found with children.
+         */
+        while (!parent->lokid && !parent->hikid && !victim->lokid &&
+                !victim->hikid) {
+            parent->eqkid = NULL;
+            free(victim);
+            victim = parent;
+            parent = tst_stack_pop(stk);
+            if (!parent) { /* last word & root node */
                 free(victim);
-                victim = parent;
-                parent = tst_stack_pop(stk);
-                if (!parent) { /* last word & root node */
-                    free(victim);
-                    return (void *) (*root = NULL);
-                }
+                return (void *) (*root = NULL);
             }
+        }
 
         /* check if victim is prefix for others (victim has lo/hi node).
          * if both lo & hi children, check if lokid->hikid present, if not,
@@ -321,7 +321,7 @@ void tst_suggest(const tst_node *p,
                  int *n,
                  const int max)
 {
-    if (!p || *n == max)
+    if (!p || *n >= max)
         return;
     tst_suggest(p->lokid, c, nchr, a, n, max);
     if (p->key)
