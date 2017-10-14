@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <getopt.h>
+#include <stdint.h>
 
 #include "tst.h"
 
@@ -34,15 +36,80 @@ static void rmcrlf(char *s)
 
 #define IN_FILE "cities.txt"
 #define MEMPOOL_SIZE 10000000
+#define TEST_FILE "command.txt"
+
+// options for getopt
+const char shortopts[] = "";
+const struct option longopts[] = {
+    {"bench", no_argument, NULL, 'b'},
+    {0, 0, 0, 0}
+};
+
+// better timing helper function
+static inline __attribute__((always_inline))
+void get_cycles(unsigned *high, unsigned *low)
+{
+    asm volatile ("CPUID\n\t"
+                  "RDTSC\n\t"
+                  "mov %%edx, %0\n\t"
+                  "movl %%eax, %1\n\t": "=r" (*high), "=r" (*low)::"%rax","%rbx","%rcx","%rdx"
+                 );
+}
+
+static inline __attribute__((always_inline))
+void get_cycles_end(unsigned *high, unsigned *low)
+{
+    asm volatile("RDTSCP\n\t"
+                 "mov %%edx, %0\n\t"
+                 "mov %%eax, %1\n\t"
+                 "CPUID\n\t": "=r" (*high), "=r" (*low)::"%rax","%rbx","%rcx","%rdx"
+                );
+}
+
+static inline __attribute__((always_inline))
+uint64_t diff_in_cycles(unsigned high1, unsigned low1,
+                        unsigned high2, unsigned low2)
+{
+    uint64_t start,end;
+    start = (((uint64_t) high1 << 32) | low1);
+    end = (((uint64_t) high2 << 32) | low2);
+    return end - start;
+}
 
 int main(int argc, char **argv)
 {
+    // getopt
+    int opt;
+    int bench_flag = 0;
+
+    while ((opt = getopt_long(argc, argv, "", longopts, NULL)) != -1) {
+        switch (opt) {
+            case 'b':
+                bench_flag = 1;
+                break;
+            case '?':
+                printf(
+                    "\nUsage:\n"
+                    "    ./test_ref [options]\n\n"
+                    "Options:\n"
+                    "    --bench        auto input, for benchmark\n"
+                );
+                return EXIT_FAILURE;
+                break;
+            default:
+                return EXIT_FAILURE;
+        }
+    }
+
+    // main code
     char word[WRDMAX] = "";
     char *sgl[LMAX] = {NULL};
     tst_node *root = NULL, *res = NULL;
     int rtn = 0, idx = 0, sidx = 0;
     FILE *fp = fopen(IN_FILE, "r");
     double t1, t2;
+    uint64_t timec, timec_all;
+    unsigned timec_high1, timec_high2, timec_low1, timec_low2;
 
     // memory for string
     char *pool = (char *) malloc(MEMPOOL_SIZE * sizeof(char));
