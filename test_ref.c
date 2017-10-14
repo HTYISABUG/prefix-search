@@ -79,12 +79,12 @@ int main(int argc, char **argv)
 {
     // getopt
     int opt;
-    /*int bench_flag = 0;*/
+    int bench_flag = 0;
 
     while ((opt = getopt_long(argc, argv, "", longopts, NULL)) != -1) {
         switch (opt) {
         case 'b':
-            /*bench_flag = 1;*/
+            bench_flag = 1;
             break;
         case '?':
             printf(
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     char word[WRDMAX] = "";
     char *sgl[LMAX] = {NULL};
     tst_node *root = NULL, *res = NULL;
-    int rtn = 0, idx = 0, sidx = 0;
+    int idx = 0, sidx = 0;
     FILE *fp = fopen(IN_FILE, "r"), *tp;
     double t1, t2;
     uint64_t timec, timec_all = 0;
@@ -122,8 +122,8 @@ int main(int argc, char **argv)
     }
 
     /*t1 = tvgetf();*/
-    tp = fopen("manual/append.txt", "w");
-    while ((rtn = fscanf(fp, "%s", pptr)) != EOF) {
+    tp = fopen("append.txt", "w");
+    while (fscanf(fp, "%s", pptr) != EOF) {
         char *p = pptr;
         /* FIXME: insert reference to each string */
         get_cycles(&timec_high1, &timec_low1);
@@ -146,6 +146,32 @@ int main(int argc, char **argv)
     fclose(tp);
     fclose(fp);
     printf("ternary_tree, loaded %d words in %lu cycles\n", idx, timec_all);
+
+    if (bench_flag) {
+        fp = fopen(IN_FILE, "r");
+        tp = fopen("prefix_search.txt", "w");
+        timec_all = 0;
+        int cnt = 0;
+        while (fscanf(fp, "%3s", word) != EOF) {
+            rmcrlf(word);
+            get_cycles(&timec_high1, &timec_low1);
+            res = tst_search_prefix(root, word, sgl, &sidx, LMAX);
+            get_cycles_end(&timec_high2, &timec_low2);
+            timec = diff_in_cycles(timec_high1, timec_low1, timec_high2, timec_low2);
+            timec_all += timec;
+            fprintf(tp, "%d %lu %d\n", ++cnt, timec, sidx);
+            if (res) {
+                printf("  %s - searched prefix in %lu cycles\n\n", word, timec);
+            } else
+                printf("  %s - not found\n", word);
+        }
+        printf("ternary_tree, searched %d words in %lu cycles\n", cnt, timec_all);
+        fclose(tp);
+        fclose(fp);
+        tst_free(root);
+        free(pool);
+        return EXIT_SUCCESS;
+    }
 
     for (;;) {
         printf(

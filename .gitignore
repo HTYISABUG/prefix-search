@@ -3,4 +3,5 @@
 test_cpy
 test_ref
 *.diff
-manual/*.txt
+*.txt
+*.png

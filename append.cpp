@@ -40,7 +40,7 @@ int main(void)
     }
     std = sqrt(std / cnt);
     printf("standard deviation: %lf\n", std);
-    printf("confidence interval (95%%): (%lf, %lf)\n", avg - CRIT_VALUE * std / sqrt(cnt),  avg + CRIT_VALUE * std / sqrt(cnt));
+    printf("confidence interval (95%%): (%lf, %lf)\n\n", avg - CRIT_VALUE * std / sqrt(cnt),  avg + CRIT_VALUE * std / sqrt(cnt));
 
     sort(begin, end, len);
     op1 = fopen("len.txt", "w");
