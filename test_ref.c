@@ -36,7 +36,6 @@ static void rmcrlf(char *s)
 
 #define IN_FILE "cities.txt"
 #define MEMPOOL_SIZE 10000000
-#define TEST_FILE "command.txt"
 
 // options for getopt
 const char shortopts[] = "";
@@ -80,24 +79,24 @@ int main(int argc, char **argv)
 {
     // getopt
     int opt;
-    int bench_flag = 0;
+    /*int bench_flag = 0;*/
 
     while ((opt = getopt_long(argc, argv, "", longopts, NULL)) != -1) {
         switch (opt) {
-            case 'b':
-                bench_flag = 1;
-                break;
-            case '?':
-                printf(
-                    "\nUsage:\n"
-                    "    ./test_ref [options]\n\n"
-                    "Options:\n"
-                    "    --bench        auto input, for benchmark\n"
-                );
-                return EXIT_FAILURE;
-                break;
-            default:
-                return EXIT_FAILURE;
+        case 'b':
+            /*bench_flag = 1;*/
+            break;
+        case '?':
+            printf(
+                "\nUsage:\n"
+                "    ./test_ref [options]\n\n"
+                "Options:\n"
+                "    --bench        auto input, for benchmark\n"
+            );
+            return EXIT_FAILURE;
+            break;
+        default:
+            return EXIT_FAILURE;
         }
     }
 
@@ -106,9 +105,9 @@ int main(int argc, char **argv)
     char *sgl[LMAX] = {NULL};
     tst_node *root = NULL, *res = NULL;
     int rtn = 0, idx = 0, sidx = 0;
-    FILE *fp = fopen(IN_FILE, "r");
+    FILE *fp = fopen(IN_FILE, "r"), *tp;
     double t1, t2;
-    uint64_t timec, timec_all;
+    uint64_t timec, timec_all = 0;
     unsigned timec_high1, timec_high2, timec_low1, timec_low2;
 
     // memory for string
@@ -122,22 +121,31 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    t1 = tvgetf();
+    /*t1 = tvgetf();*/
+    tp = fopen("manual/append.txt", "w");
     while ((rtn = fscanf(fp, "%s", pptr)) != EOF) {
         char *p = pptr;
         /* FIXME: insert reference to each string */
+        get_cycles(&timec_high1, &timec_low1);
         if (!tst_ins_del(&root, &p, INS, REF)) {
             fprintf(stderr, "error: memory exhausted, tst_insert.\n");
+            fclose(tp);
             fclose(fp);
             return 1;
         }
-        pptr += (strlen(pptr) + 1);
+        get_cycles_end(&timec_high2, &timec_low2);
+        timec = diff_in_cycles(timec_high1, timec_low1, timec_high2, timec_low2);
+        timec_all += timec;
+        int len = strlen(pptr);
+        pptr += (len + 1);
         idx++;
+        fprintf(tp, "%d %lu %d\n", idx, timec, len);
     }
-    t2 = tvgetf();
+    /*t2 = tvgetf();*/
 
+    fclose(tp);
     fclose(fp);
-    printf("ternary_tree, loaded %d words in %.6f sec\n", idx, t2 - t1);
+    printf("ternary_tree, loaded %d words in %lu cycles\n", idx, timec_all);
 
     for (;;) {
         printf(

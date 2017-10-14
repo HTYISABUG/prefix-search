@@ -41,8 +41,12 @@ test_%: test_%.o $(OBJS_LIB)
 	$(VECHO) "  CC\t$@\n"
 	$(Q)$(CC) -o $@ $(CFLAGS) -c -MMD -MF .$@.d $<
 
+bench:
+	sudo chrt -f 99 taskset -c 1 ./test_ref
+
 clean:
 	$(RM) $(TESTS) $(OBJS)
 	$(RM) $(deps)
+	$(RM) *.png
 
 -include $(deps)
