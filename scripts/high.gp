@@ -8,4 +8,5 @@ set style fill solid
 set xtic 2
 set label rotate by 45 right
 
-plot [:][:]'high.txt' using 2 with histogram title ''
+plot [:][:]'high_cpy.txt' using 2 with histogram title 'cpy', \
+           'high_ref.txt' using 2 with histogram title 'ref'

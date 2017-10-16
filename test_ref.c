@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     }
 
     /*t1 = tvgetf();*/
-    tp = fopen("append.txt", "w");
+    tp = fopen("append_ref.txt", "w");
     while (fscanf(fp, "%s", pptr) != EOF) {
         char *p = pptr;
         /* FIXME: insert reference to each string */
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
     if (bench_flag) {
         fp = fopen(IN_FILE, "r");
-        tp = fopen("prefix_search.txt", "w");
+        tp = fopen("prefix_search_ref.txt", "w");
         timec_all = 0;
         int cnt = 0;
         while (fscanf(fp, "%3s", word) != EOF) {

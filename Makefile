@@ -6,13 +6,9 @@ CPP = g++
 CFLAGS = -Wall -Werror -g
 CPPFLAGS = -Wall -Werror -g -std=c++0x
 
-GENFILE= append.txt \
-		 data.txt \
-		 ldata.txt \
-		 len.txt \
-		 high.txt \
-		 prefix_search.txt \
-		 prefix_search_avg.txt
+GENFILE= *_cpy.txt \
+		 *_ref.txt \
+		 output
 
 EXEC = append \
 	   prefix_search
@@ -61,16 +57,23 @@ prefix_search: prefix_search.cpp
 	$(CPP) $(CPPFLAGS) $@.cpp -o $@
 
 bench: $(TESTS) $(EXEC)
-	sudo chrt -f 99 taskset -c 1 ./test_ref --bench
-	./append
-	./prefix_search
+	sudo chrt -f 99 taskset -c 1 \
+		perf stat --repeat 50 \
+		-e cache-misses,cache-references,branch-misses,branch-instructions,mem-loads,mem-stores,ref-cycles \
+		-o test_cpy.perf ./test_cpy --bench
+	sudo chrt -f 99 taskset -c 1 \
+		perf stat --repeat 50 \
+		-e cache-misses,cache-references,branch-misses,branch-instructions,mem-loads,mem-stores,ref-cycles \
+		-o test_ref.perf ./test_ref --bench
+	./append > output
+	./prefix_search >> output
 
-plot: bench
+plot:
 	gnuplot scripts/*.gp
 
 clean:
 	$(RM) $(TESTS) $(OBJS) $(EXEC)
 	$(RM) $(deps)
-	$(RM) *.png $(GENFILE)
+	$(RM) *.png $(GENFILE) *.perf
 
 -include $(deps)
